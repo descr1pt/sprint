@@ -1,17 +1,11 @@
-from django.contrib.auth.models import User
 from django.core.files import File
 from django.db import models
 
 
-class Users(models.Model):
-    autUser = models.OneToOneField(User, on_delete=models.CASCADE)
+class MyUser(models.Model):
     mail = models.CharField(max_length=128, unique=True)
     full_name = models.CharField(max_length=128)
     phone = models.IntegerField(unique=True)
-
-    # для удобного отображения на странице администратора
-    def __str__(self):
-        return self.autUser.username
 
 
 class Coord(models.Model):
@@ -20,17 +14,11 @@ class Coord(models.Model):
     height = models.IntegerField()
 
 
-class Images(models.Model):
-    title = models.CharField(max_length=128)
-    image = models.ImageField(default='Moench_2339.jpg')
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        with open('static/images', 'rb') as f:
-            self.image.save(f)
+class Level(models.Model):
+    level_name = models.CharField(max_length=128, unique=True)
 
 
-class PerevalAdded(models.Model):
+class Pereval(models.Model):
     NEW = 'NW'
     PENDING = 'PN'
     ACCEPTED = 'AC'
@@ -41,36 +29,31 @@ class PerevalAdded(models.Model):
         ('PN', 'Pending'),
         ('RJ', 'Rejected'),
     )
-
-    LEVEL_1 = '1A'
-    LEVEL_2 = '1Б'
-    LEVEL_3 = '2А'
-    LEVEL_4 = '2Б'
-    LEVEL_5 = '3А'
-    LEVEL_6 = '3Б'
-    LEVEL_CHOICES = (
-        ('1А', '1А'),
-        ('1Б', '1Б'),
-        ('2А', '2А'),
-        ('2Б', '2Б'),
-        ('3А', '3А'),
-        ('3Б', '3Б'),
-    )
     beautyTitle = models.CharField(max_length=128)
     title = models.CharField(max_length=128)
     other_titles = models.CharField(max_length=128)
     connect = models.CharField(max_length=128)
     add_time = models.DateTimeField(auto_now_add=True)
-    coord_id = models.OneToOneField(Coord, on_delete=models.CASCADE)
-    author_id = models.ForeignKey(Users, on_delete=models.CASCADE)
-    photo_id = models.ManyToManyField(Images, through='PerevalImages')
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, default=NEW)
-    winter_dif = models.CharField(max_length=2, choices=LEVEL_CHOICES, default=LEVEL_1)
-    spring_dif = models.CharField(max_length=2, choices=LEVEL_CHOICES, default=LEVEL_1)
-    summer_dif = models.CharField(max_length=2, choices=LEVEL_CHOICES, default=LEVEL_1)
-    autumn_dif = models.CharField(max_length=2, choices=LEVEL_CHOICES, default=LEVEL_1)
+    coord_id = models.OneToOneField(Coord, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(MyUser, on_delete=models.CASCADE)
+    winter_level_id = models.ManyToManyField(Level, through='PerevalLevel')
+    spring_level_id = models.ManyToManyField(Level, through='PerevalLevel')
+    summer_level_id = models.ManyToManyField(Level, through='PerevalLevel')
+    autumn_level_id = models.ManyToManyField(Level, through='PerevalLevel')
 
 
-class PerevalImages(models.Model):
-    photo_id = models.ForeignKey(Images, on_delete=models.CASCADE)
-    pereval_id = models.ForeignKey(PerevalAdded, on_delete=models.CASCADE)
+class Images(models.Model):
+    title = models.CharField(max_length=128)
+    image = models.ImageField(default='Moench_2339.jpg')
+    pereval_id = models.ForeignKey(Pereval, on_delete=models.CASCADE)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        with open('static/images', 'rb') as f:
+            self.image.save(f)
+
+
+class PerevalLevel(models.Model):
+    pereval_id = models.ForeignKey(Pereval, on_delete=models.CASCADE)
+    level_id = models.ForeignKey(Level, on_delete=models.CASCADE)
